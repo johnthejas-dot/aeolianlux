@@ -1,84 +1,77 @@
 import streamlit as st
+import pandas as pd
 from openai import OpenAI
 from pinecone import Pinecone
-import re # Tool to find phone numbers
+import time
 
 # 1. Config
-st.set_page_config(page_title="Aeolianlux Luxury Living", page_icon="✨")
-st.title("Dubai Luxury Living")
-st.caption("Stay • Shop • Food")
+st.set_page_config(page_title="Aeolianlux Brain Builder", page_icon="🧠")
+st.title("🧠 Add NEW Knowledge to Brain")
 
-# 2. Connect
+# 2. Setup Connections
 try:
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     pc = Pinecone(api_key=st.secrets["PINECONE_API_KEY"])
-    index = pc.Index("aeolianlux-index") 
+    index = pc.Index("aeolianlux-index")
 except Exception as e:
     st.error(f"Connection Error: {e}")
     st.stop()
 
-# 3. Chat History
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{
-        "role": "assistant", 
-        "content": "Hello! I can help you find Exotic Luxury places to stay, excellent restaurants, and where to buy Luxury special gifts. What are you looking for?"
-    }]
+# 3. File Uploader
+uploaded_file = st.file_uploader("Upload your 'Luxury Services' Excel file", type=['xlsx', 'csv'])
 
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
-
-# 4. Input & Lead Capture Logic
-if prompt := st.chat_input("Ask me about Dubai Luxury life..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-
-    # --- LEAD CAPTURE (New Feature) ---
-    # This checks if the user typed something that looks like a phone number (digits > 7)
-    if any(char.isdigit() for char in prompt):
-        phone_pattern = re.search(r'\+?\d[\d -]{7,}\d', prompt)
-        if phone_pattern:
-            captured_number = phone_pattern.group()
-            print(f"💰 LEAD CAPTURED: {captured_number} - Query: {prompt}") 
-            # This 'print' saves it to your Streamlit App Logs (Manage App -> Logs)
-
+if uploaded_file is not None:
+    st.info("File received. Processing...")
+    
     try:
-        # A. Embed
-        response = client.embeddings.create(input=prompt, model="text-embedding-3-small")
-        query_vector = response.data[0].embedding
-
-        # B. Search
-        search_response = index.query(vector=query_vector, top_k=5, include_metadata=True)
-
-        # C. Context
-        context_text = ""
-        for match in search_response['matches']:
-            if 'text' in match['metadata']:
-                context_text += match['metadata']['text'] + "\n---\n"
-
-        # D. Answer
-        my_email = "john.thejas@gmail.com"
-        my_phone = "+918722232727"
-
-        system_prompt = f"""You are a Luxury Concierge for Dubai.
-        Context: {context_text}
-        Official Contact: {my_email}, {my_phone}
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
         
-        Instructions:
-        1. Answer based on context.
-        2. IF USER PROVIDES PHONE/EMAIL:
-           - Acknowledge it warmly.
-           - Provide YOUR Official Contact details immediately.
-           - Say: "I have noted your interest. For immediate bespoke assistance, please reach out to our team at {my_phone}."
-        """
-
-        openai_response = client.chat.completions.create(
-            model="gpt-4o", 
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}]
-        )
+        st.write(f"Preview ({len(df)} rows):")
+        st.dataframe(df.head())
         
-        bot_reply = openai_response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-        st.chat_message("assistant").write(bot_reply)
+        if st.button("Upload to Brain"):
+            progress_bar = st.progress(0)
+            
+            vectors_to_upload = []
+            
+            for i, row in df.iterrows():
+                # Combine columns into text
+                # We assume columns are 'Topic' and 'Details'
+                text_chunk = f"Topic: {row.iloc[0]} - Details: {row.iloc[1]}"
+                
+                try:
+                    response = client.embeddings.create(
+                        input=text_chunk,
+                        model="text-embedding-3-small"
+                    )
+                    embedding = response.data[0].embedding
+                    
+                    # UNIQUE ID (Using timestamp to ensure we don't overwrite)
+                    vectors_to_upload.append({
+                        "id": f"update_{int(time.time())}_{i}", 
+                        "values": embedding,
+                        "metadata": {"text": text_chunk}
+                    })
+                    
+                except Exception as e:
+                    st.error(f"Error on row {i}: {e}")
+                
+                # Batch upload every 50 rows to keep it stable
+                if len(vectors_to_upload) >= 50:
+                    index.upsert(vectors=vectors_to_upload)
+                    vectors_to_upload = [] # Reset list
+                    
+                progress_bar.progress((i + 1) / len(df))
 
+            # Upload any remaining
+            if vectors_to_upload:
+                index.upsert(vectors=vectors_to_upload)
+            
+            st.success("✅ Success! New knowledge added.")
+            st.balloons()
+            
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error reading file: {e}")
