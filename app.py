@@ -20,15 +20,15 @@ st.markdown("""
         color: #FAFAFA;
     }
     
-    /* 2. Hide Streamlit Branding & Menus (Footer Removal) */
+    /* 2. AGGRESSIVE FOOTER REMOVAL */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
+    [data-testid="stFooter"] {display: none !important;}
     div[data-testid="stDecoration"] {display:none;}
     
     /* 3. Style the Input Fields (Name/Phone) */
-    /* Dark grey background with white text for a premium feel */
     .stTextInput input {
         color: #FFFFFF !important;
         background-color: #262730 !important;
@@ -95,7 +95,8 @@ if st.session_state.user_info is None:
     st.markdown("<p style='text-align: center; font-style: italic; color: #BBBBBB;'>The Definition of Dubai Luxury.</p>", unsafe_allow_html=True)
     st.markdown("---")
     
-    st.write("To begin your personalized experience, please introduce yourself:")
+    # NEW OPTION 2 TEXT IS HERE
+    st.write("May we request the pleasure of your introduction to serve you better as you navigate the absolute pinnacle of Dubai luxury?")
     
     with st.form("lead_capture_form"):
         name = st.text_input("Full Name")
