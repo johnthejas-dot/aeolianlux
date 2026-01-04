@@ -1,43 +1,54 @@
 import streamlit as st
 
-# --- CONFIGURATION (Must be the first Streamlit command) ---
-st.set_page_config(page_title="Aeolianlux", page_icon="⚜️", layout="wide")
+# --- 1. CUSTOMIZE YOUR BOOKMARK HERE ---
+st.set_page_config(
+    page_title="Aeolianlux | Dubai Luxury",  # <--- This is the Bookmark Text
+    page_icon="⚜️",                          # <--- This is the Bookmark Icon
+    layout="wide"
+)
 
-# --- 1. REMOVE FOOTER & 2. FIX TEXT COLOR ---
-# We use 'unsafe_allow_html' to inject CSS that forces text to be readable
-hide_styles = """
+# --- 2. CUSTOM CSS: FORCE DARK THEME & HIDE FOOTER ---
+st.markdown("""
     <style>
-    /* Hides the Streamlit Footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Forces all standard text to be White/Light for readability on dark backgrounds */
-    .stMarkdown, p, div {
-        color: #E0E0E0 !important; /* Light Grey/White */
+    /* Force the main app background to be Dark Navy/Black */
+    .stApp {
+        background-color: #0E1117;
+    }
+
+    /* Force all text to be White or Gold */
+    h1, h2, h3 {
+        color: #D4AF37 !important; /* Metallic Gold for Titles */
+    }
+    p, div, label, span {
+        color: #FAFAFA !important; /* Bright White for normal text */
     }
     
-    /* Optional: Makes the User Input text visible if that is also dark */
+    /* Hide the Streamlit Red Balloon & Footer */
+    footer {visibility: hidden;} 
+    header {visibility: hidden;} 
+    .stDeployButton {display:none;} 
+    
+    /* Make Input boxes readable (Dark Grey background, White text) */
     .stTextInput input {
         color: #ffffff !important;
+        background-color: #262730 !important;
+        border: 1px solid #D4AF37; /* Optional: Gold Border */
     }
     </style>
-"""
-st.markdown(hide_styles, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- 3. SESSION PRIVACY FIX ---
-# Instead of loading data immediately, check if the user is 'new' to this session.
+# --- 3. SESSION PRIVACY FIX (Stops "Thejas 5" from appearing) ---
+# This ensures every new visitor starts as a "Guest"
 if 'user_name' not in st.session_state:
-    st.session_state.user_name = "Guest" # Default to Guest, not "Thejas 5"
-    st.session_state.chat_history = []   # Start with an empty chat
+    st.session_state.user_name = "Guest"
 
-# --- YOUR APP LOGIC STARTS HERE ---
-# (Only show the specific user's name if they have actually logged in)
-
+# --- 4. YOUR MAIN APP CONTENT ---
 if st.session_state.user_name == "Guest":
     st.title("Welcome to Dubai Luxury Living")
-    # You can add your Sidebar Lead Capture form here later
+    st.write("Experience the finest places to stay, shop, and dine.")
 else:
     st.title(f"Welcome back, {st.session_state.user_name}")
 
-# ... (Rest of your existing code) ...
+# (Paste the rest of your logic/AI code here)
+# IMPORTANT: Make sure you DELETED the old line that looked like:
+# user = df.iloc[-1]['name']  <--- DELETE THIS LINE IF YOU SEE IT
