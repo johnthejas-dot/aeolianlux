@@ -20,17 +20,17 @@ st.markdown("""
         color: #FAFAFA;
     }
     
-    /* 2. AGGRESSIVE FOOTER REMOVAL (Hides 'Built with Streamlit') */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* 2. AGGRESSIVE FOOTER REMOVAL */
+    /* This targets all known Streamlit footer elements */
     header {visibility: hidden;}
+    footer {visibility: hidden;}
     .stDeployButton {display:none;}
-    [data-testid="stFooter"] {display: none !important;}
-    div[data-testid="stDecoration"] {display:none;}
+    [data-testid="stHeader"] {display: none;}
+    [data-testid="stFooter"] {display: none;}
     
-    /* 3. Style the Input Fields (Make sure text is visible!) */
+    /* 3. INPUT FIELDS (Name/Mobile) */
     .stTextInput input {
-        color: #000000 !important; /* Force Black text on White box */
+        color: #000000 !important; /* Black Text */
         background-color: #FFFFFF !important; /* White Background */
         border: 1px solid #D4AF37 !important; /* Gold Border */
         border-radius: 5px;
@@ -39,39 +39,35 @@ st.markdown("""
         color: #D4AF37 !important; /* Gold Labels */
     }
     
-    /* 4. GOLD BUTTON for "Start Concierge" */
-    div.stButton > button:first-child {
-        background-color: #D4AF37 !important; /* Luxury Gold */
+    /* 4. THE "ENTER CONCIERGE" BUTTON FIX */
+    /* We target the form submit button specifically */
+    div[data-testid="stFormSubmitButton"] > button {
+        background-color: #D4AF37 !important; /* Solid Gold Background */
         color: #000000 !important; /* Black Text */
         border: none !important;
-        border-radius: 5px !important;
         font-weight: bold !important;
-        font-size: 18px !important;
         padding: 10px 20px !important;
         width: 100%;
         transition: all 0.3s ease;
     }
-    div.stButton > button:hover {
-        background-color: #F8F8FF !important; /* White on Hover */
-        color: #D4AF37 !important; /* Gold Text on Hover */
+    
+    /* Button Hover Effect */
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #FFFFFF !important; /* Turn White on Hover */
+        color: #D4AF37 !important; /* Text turns Gold */
+        border: 2px solid #D4AF37 !important;
         box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
     }
-    
-    /* 5. Chat Message Styling */
-    /* User Message */
+
+    /* 5. CHAT INTERFACE STYLING */
     .stChatMessage[data-testid="stChatMessage"]:nth-child(odd) {
-        background-color: #1E1E1E;
+        background-color: #1E1E1E; /* User Bubble */
         border: 1px solid #333;
-        border-radius: 10px;
     }
-    /* AI Message (Gold Border) */
     .stChatMessage[data-testid="stChatMessage"]:nth-child(even) {
-        background-color: #161920;
+        background-color: #161920; /* AI Bubble */
         border: 1px solid #D4AF37;
-        border-radius: 10px;
     }
-    
-    /* 6. Chat Input Box Styling */
     .stChatInput textarea {
         color: #000000 !important;
         background-color: #FFFFFF !important;
@@ -81,7 +77,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 3. INITIALIZE CONNECTIONS ---
-# We use a try-except block so the app doesn't crash if keys are missing
 try:
     if "OPENAI_API_KEY" in st.secrets:
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -122,17 +117,18 @@ if st.session_state.user_info is None:
         with col2:
             mobile_number = st.text_input("Mobile Number")
             
+        # The Button (Now Styled with CSS above)
         submitted = st.form_submit_button("ENTER CONCIERGE")
         
         if submitted and name and mobile_number:
             full_phone = f"{country_code} {mobile_number}"
-            # Log the lead (You can connect this to Google Sheets later)
+            # Log the lead
             print(f"NEW LEAD: {name} - {full_phone} - {datetime.datetime.now()}")
             
             st.session_state.user_info = {"name": name, "phone": full_phone}
             st.rerun()
             
-    st.stop() # Stops the app here if they haven't logged in
+    st.stop() 
 
 # --- 6. MAIN CHAT INTERFACE ---
 # Header
@@ -153,7 +149,7 @@ if user_input:
         st.markdown(user_input)
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-    # 2. Retrieve Knowledge (Only if connected)
+    # 2. Retrieve Knowledge
     knowledge = "AI is ready, but Database is not connected yet."
     if client and index:
         try:
@@ -191,4 +187,4 @@ if user_input:
         
         st.session_state.chat_history.append({"role": "assistant", "content": response_text})
     else:
-        st.error("OpenAI API Key is missing.")
+        st.warning("OpenAI API Key is missing. Please add it to Streamlit Secrets.")
