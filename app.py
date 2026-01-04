@@ -19,7 +19,7 @@ st.markdown("""
         color: #FAFAFA;
     }
     
-    /* 2. HIDE STREAMLIT BRANDING */
+    /* 2. HIDE STREAMLIT BRANDING (Footer & Menu) */
     header {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     .stDeployButton {display:none !important;}
@@ -38,25 +38,17 @@ st.markdown("""
         color: #D4AF37 !important; 
     }
     
-    /* --- 4. THE BUTTON FIX (BULLETPROOF) --- */
-    
-    /* Target specifically the Form Submit Button */
+    /* 4. THE BUTTON FIX (BULLETPROOF) */
     [data-testid="stFormSubmitButton"] > button {
         background-color: #D4AF37 !important;
         border: none !important;
         transition: all 0.3s ease;
     }
-
-    /* Force ALL text inside the button to be BLACK */
-    [data-testid="stFormSubmitButton"] > button p,
-    [data-testid="stFormSubmitButton"] > button div,
-    [data-testid="stFormSubmitButton"] > button span {
+    [data-testid="stFormSubmitButton"] > button p {
         color: #000000 !important; 
         font-weight: 900 !important;
         font-size: 18px !important;
     }
-
-    /* Hover Effects */
     [data-testid="stFormSubmitButton"] > button:hover {
         background-color: #FFFFFF !important;
         border: 1px solid #D4AF37 !important;
@@ -65,15 +57,29 @@ st.markdown("""
         color: #D4AF37 !important;
     }
 
-    /* 5. CHAT MESSAGES */
+    /* --- 5. CHAT MESSAGE FIX (READABILITY) --- */
+    
+    /* User Message Bubble (Dark Grey) */
     .stChatMessage[data-testid="stChatMessage"]:nth-child(odd) {
-        background-color: #1E1E1E;
-        border: 1px solid #333;
+        background-color: #1E1E1E !important;
+        border: 1px solid #333 !important;
     }
+    
+    /* AI Message Bubble (Dark Navy + Gold Border) */
     .stChatMessage[data-testid="stChatMessage"]:nth-child(even) {
-        background-color: #161920;
-        border: 1px solid #D4AF37;
+        background-color: #161920 !important;
+        border: 1px solid #D4AF37 !important;
     }
+    
+    /* *** CRITICAL FIX: FORCE TEXT TO BE WHITE *** */
+    /* This targets the paragraphs (p) inside the chat bubbles */
+    [data-testid="stChatMessage"] p, 
+    [data-testid="stChatMessage"] div {
+        color: #E0E0E0 !important; /* Bright Grey/White */
+        line-height: 1.6 !important;
+    }
+    
+    /* Chat Input Box */
     .stChatInput textarea {
         color: #000000 !important;
         background-color: #FFFFFF !important;
@@ -127,7 +133,8 @@ if st.session_state.user_info is None:
         
         if submitted and name and mobile_number:
             full_phone = f"{country_code} {mobile_number}"
-            print(f"NEW LEAD: {name} - {full_phone} - {datetime.datetime.now()}")
+            # You can uncomment this next line to debug in logs
+            # print(f"NEW LEAD: {name} - {full_phone}")
             st.session_state.user_info = {"name": name, "phone": full_phone}
             st.rerun()
             
@@ -144,19 +151,22 @@ for message in st.session_state.chat_history:
 user_input = st.chat_input("I am at your service. What do you wish to discover about Dubai Luxury Living?")
 
 if user_input:
+    # 1. Show User Message
     with st.chat_message("user"):
         st.markdown(user_input)
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-    knowledge = "AI is ready, but Database is not connected yet."
+    # 2. Retrieve Knowledge
+    knowledge = ""
     if client and index:
         try:
             xq = client.embeddings.create(input=user_input, model="text-embedding-3-small").data[0].embedding
             res = index.query(vector=xq, top_k=3, include_metadata=True)
             knowledge = "\n".join([match['metadata']['text'] for match in res['matches']])
-        except Exception as e:
-            knowledge = f"Database Error: {e}"
+        except Exception:
+            knowledge = "Database not connected."
 
+    # 3. Generate AI Response
     system_prompt = f"""
     You are Aeolianlux, Dubai's most elite digital concierge.
     User Name: {st.session_state.user_info['name']}
@@ -175,10 +185,10 @@ if user_input:
                 stream=True
             )
             response_text = st.write_stream(response_stream)
-        
         st.session_state.chat_history.append({"role": "assistant", "content": response_text})
     else:
-        response_text = "Thank you for your inquiry. Our AI concierge is currently offline for maintenance."
+        # Fallback response if no API key is present
+        response_text = "The AI concierge is currently offline. Please check your API keys."
         with st.chat_message("assistant"):
             st.markdown(response_text)
         st.session_state.chat_history.append({"role": "assistant", "content": response_text})
