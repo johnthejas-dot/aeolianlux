@@ -1,0 +1,14 @@
+name: Keep App Alive
+
+on:
+  schedule:
+    # Runs every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allows manual run
+
+jobs:
+  ping_site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Aeolianlux
+        run: curl -I https://aeolianlux-concierge.streamlit.app
