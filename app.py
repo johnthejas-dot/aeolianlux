@@ -14,11 +14,12 @@ st.set_page_config(
     page_title="Aeolian Lux | AI Concierge", 
     page_icon="✨", 
     layout="wide",
-    initial_sidebar_state="expanded"
+    # UPDATED: Set to 'collapsed' for a cleaner LinkedIn demo look
+    initial_sidebar_state="collapsed" 
 )
 
 # API KEY SETUP
-# Try to get from Cloud Secret/Env Var first, otherwise use the hardcoded one
+# Priority: Cloud Secret Env Var -> Hardcoded Fallback
 GOOG_API_KEY = os.environ.get("GOOG_API_KEY", "AIzaSyD4-xlOdK1tPRN7JYMii0fzT72idj-R_ZE")
 genai.configure(api_key=GOOG_API_KEY)
 
@@ -36,13 +37,12 @@ if not firebase_admin._apps:
                 cred = credentials.Certificate('firestore_key.json') 
                 firebase_admin.initialize_app(cred)
             except:
-                pass # Fail silently if local key is missing, will use Cloud Env
+                pass # Fail silently if local key is missing
             
         if not firebase_admin._apps:
              firebase_admin.initialize_app(cred)
              
     except Exception as e:
-        # st.error(f"Failed to connect to Database: {e}") 
         pass
 
 db = firestore.client()
@@ -56,7 +56,7 @@ def login_screen():
     with col2:
         st.write("") 
         st.write("") 
-        # BRANDING: Matches Aeolianlux.com
+        # BRANDING: Matches Aeolianlux.com aesthetics
         st.markdown("<h1 style='text-align: center; color: #D4AF37;'>Aeolian Lux</h1>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; color: #FAFAFA;'>AI Concierge</h3>", unsafe_allow_html=True)
         st.write("")
@@ -67,7 +67,6 @@ def login_screen():
         from streamlit_oauth import OAuth2Component
         
         try:
-            # STRATEGY: Check for Cloud Secret first -> Then Local File
             if "CLIENT_SECRET_CONTENT" in os.environ:
                 secrets = json.loads(os.environ["CLIENT_SECRET_CONTENT"])
             else:
@@ -84,12 +83,11 @@ def login_screen():
             return
 
         # --- FIX: HARDCODED REDIRECT URI FOR YOUR CLOUD RUN ---
-        # I extracted this URL from your screenshot (me-central1)
         redirect_uri = "https://aeolianlux-brain-265071649009.me-central1.run.app/component/streamlit_oauth.authorize_button"
         
         oauth2 = OAuth2Component(CLIENT_ID, CLIENT_SECRET, AUTHORIZE_URL, TOKEN_URL, TOKEN_URL, "")
         
-        # We pass the explicit 'redirect_uri' here to override localhost
+        # Override localhost with the explicit Cloud Run redirect_uri
         result = oauth2.authorize_button("Experience the AI", redirect_uri, "openid email profile")
         
         if result:
