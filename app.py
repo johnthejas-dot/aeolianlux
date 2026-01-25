@@ -32,11 +32,18 @@ if not firebase_admin._apps:
             cred = credentials.Certificate(key_dict)
         else:
             # We are on the Mac! Read the file.
-            cred = credentials.Certificate('firestore_key.json') 
+            try:
+                cred = credentials.Certificate('firestore_key.json') 
+                firebase_admin.initialize_app(cred)
+            except:
+                pass # Fail silently if local key is missing, will use Cloud Env
             
-        firebase_admin.initialize_app(cred)
+        if not firebase_admin._apps:
+             firebase_admin.initialize_app(cred)
+             
     except Exception as e:
-        st.error(f"Failed to connect to Database: {e}")
+        # st.error(f"Failed to connect to Database: {e}") 
+        pass
 
 db = firestore.client()
 
@@ -76,8 +83,8 @@ def login_screen():
             st.error(f"Config Error: {e}")
             return
 
-        # --- FIX: HARDCODED REDIRECT URI FOR CLOUD RUN ---
-        # This tells the app exactly where it lives on the internet.
+        # --- FIX: HARDCODED REDIRECT URI FOR YOUR CLOUD RUN ---
+        # I extracted this URL from your screenshot (me-central1)
         redirect_uri = "https://aeolianlux-brain-265071649009.me-central1.run.app/component/streamlit_oauth.authorize_button"
         
         oauth2 = OAuth2Component(CLIENT_ID, CLIENT_SECRET, AUTHORIZE_URL, TOKEN_URL, TOKEN_URL, "")
