@@ -1,6 +1,6 @@
-flask
-google-generativeai
-gunicorn
-flask-cors
+streamlit
+firebase-admin
 pandas
+streamlit-oauth
+google-generativeai
 openpyxl
